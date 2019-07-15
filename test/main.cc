@@ -242,3 +242,113 @@ TEST_CASE("arrays can be move assigned") {
   std::copy(a2.cbegin(), a2.cend(), std::ostream_iterator<int>(ss2, ""));
   REQUIRE(ss2.str() == "123456");
 }
+
+TEST_CASE("arrays can be compared for equality") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+
+  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  a2(0, 0) = 1;
+  a2(0, 1) = 2;
+  a2(0, 2) = 3;
+  a2(1, 0) = 4;
+  a2(1, 1) = 5;
+  a2(1, 2) = 6;
+
+  REQUIRE(a == a2);
+}
+
+TEST_CASE("arrays can be compared for inequality") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+
+  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  a2(0, 0) = 3;
+  a2(0, 1) = 3;
+  a2(0, 2) = 3;
+  a2(1, 0) = 3;
+  a2(1, 1) = 3;
+  a2(1, 2) = 3;
+
+  REQUIRE(a != a2);
+}
+
+TEST_CASE("arrays can be negated") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+
+  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  a2(0, 0) = -1;
+  a2(0, 1) = -2;
+  a2(0, 2) = -3;
+  a2(1, 0) = -4;
+  a2(1, 1) = -5;
+  a2(1, 2) = -6;
+
+  REQUIRE(-a == a2);
+}
+
+TEST_CASE("arrays can be added") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+
+  auto a2 = a;
+
+  auto a3 = nd::array<int, nd::row_major, 2, 3>{};
+  a3(0, 0) = 2;
+  a3(0, 1) = 4;
+  a3(0, 2) = 6;
+  a3(1, 0) = 8;
+  a3(1, 1) = 10;
+  a3(1, 2) = 12;
+
+  REQUIRE(a + a2 == a3);
+}
+
+TEST_CASE("arrays can be subtracted") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 2;
+  a(0, 1) = 4;
+  a(0, 2) = 6;
+  a(1, 0) = 8;
+  a(1, 1) = 10;
+  a(1, 2) = 12;
+
+  auto a2 = nd::array<int, nd::row_major, 2, 3>{};;
+  a2(0, 0) = 1;
+  a2(0, 1) = 2;
+  a2(0, 2) = 3;
+  a2(1, 0) = 4;
+  a2(1, 1) = 5;
+  a2(1, 2) = 6;
+
+  auto a3 = nd::array<int, nd::row_major, 2, 3>{};
+  a3(0, 0) = 1;
+  a3(0, 1) = 2;
+  a3(0, 2) = 3;
+  a3(1, 0) = 4;
+  a3(1, 1) = 5;
+  a3(1, 2) = 6;
+
+  REQUIRE(a - a2 == a3);
+}

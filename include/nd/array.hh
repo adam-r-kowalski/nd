@@ -154,6 +154,32 @@ struct shape<array<T, Layout, Dimensions...>> {
   constexpr static shape_type value = shape_type{Dimensions...};
 };
 
+template <Array A> auto operator-(const A &a) -> A {
+  auto a2 = A{};
+  std::transform(a.cbegin(), a.cend(), a2.begin(), std::negate<>{});
+  return a2;
+}
+
+template <Array A> auto operator==(const A &a, const A &a2) -> bool {
+  return std::equal(a.cbegin(), a.cend(), a2.cbegin());
+}
+
+template <Array A> auto operator!=(const A &a, const A &a2) -> bool {
+  return !std::equal(a.cbegin(), a.cend(), a2.cbegin());
+}
+
+template <Array A> auto operator+(const A &a, const A &a2) -> A {
+  auto a3 = A{};
+  std::transform(a.cbegin(), a.cend(), a2.cbegin(), a3.begin(), std::plus<>{});
+  return a3;
+}
+
+template <Array A> auto operator-(const A &a, const A &a2) -> A {
+  auto a3 = A{};
+  std::transform(a.cbegin(), a.cend(), a2.cbegin(), a3.begin(), std::minus<>{});
+  return a3;
+}
+
 } // namespace v0
 
 } // namespace nd
