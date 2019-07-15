@@ -13,12 +13,12 @@ TEST_CASE("arrays can be constructed with default specification") {
   static_assert(nd::Same<A::layout_type, nd::row_major<A::shape_type>>);
 }
 
-struct spec {
+struct custom_specification {
   template <class Shape> using layout_type = nd::column_major<Shape>;
 };
 
 TEST_CASE("arrays can be constructed with custom specification") {
-  auto a = nd::make_array<int, spec, 3, 5>();
+  auto a = nd::make_array<int, custom_specification, 3, 5>();
   using A = decltype(a);
   static_assert(nd::Array<A>);
   static_assert(nd::MutableArray<A>);
@@ -149,7 +149,7 @@ TEST_CASE("row major arrays can iterated in row order") {
 }
 
 TEST_CASE("column major arrays can iterated in column order") {
-  auto a = nd::make_array<int, spec, 2, 3>();
+  auto a = nd::make_array<int, custom_specification, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -340,14 +340,5 @@ TEST_CASE("arrays can be subtracted") {
   a2(1, 1) = 5;
   a2(1, 2) = 6;
 
-  auto a3 = nd::make_array<int, 2, 3>();
-  a3(0, 0) = 1;
-  a3(0, 1) = 2;
-  a3(0, 2) = 3;
-  a3(1, 0) = 4;
-  a3(1, 1) = 5;
-  a3(1, 2) = 6;
-
-  REQUIRE(a - a2 == a3);
+  REQUIRE(a - a2 == a2);
 }
-

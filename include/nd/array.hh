@@ -154,11 +154,14 @@ auto make_array(Arguments &&... arguments) {
       std::forward<Arguments>(arguments)...};
 }
 
+struct default_specification {
+  template <class Size> using layout_type = row_major<Size>;
+};
+
 template <class T, int... Dimensions, class... Arguments>
 auto make_array(Arguments &&... arguments) {
-  using layout_type = row_major<std::array<int, sizeof...(Dimensions)>>;
-  return array<T, layout_type, Dimensions...>{
-      std::forward<Arguments>(arguments)...};
+  return make_array<T, default_specification, Dimensions...>(
+      std::forward<Arguments>(arguments)...);
 }
 
 template <class T, Layout L, int... Dimensions>
