@@ -5,6 +5,7 @@
 
 #include <nd/core.hh>
 
+
 TEST_CASE("arrays can be constructed with default specification") {
   auto a = nd::make_array<int, 3, 5>();
   using A = decltype(a);

@@ -100,7 +100,12 @@ private:
   Shape stride_;
 };
 
-template <class T, Layout L, int... Dimensions> struct array {
+// clang-format off
+template <class S, class Shape = std::array<int, 2>>
+concept Specification = Layout<typename S::template layout_type<Shape>>;
+// clang-format on
+
+template <class T, Specification S, int... Dimensions> struct array {
   using value_type = T;
   using reference = value_type &;
   using const_reference = const value_type &;
@@ -108,7 +113,7 @@ template <class T, Layout L, int... Dimensions> struct array {
   using shape_type = std::array<int, sizeof...(Dimensions)>;
   using iterator = typename data_type::iterator;
   using const_iterator = typename data_type::const_iterator;
-  using layout_type = L;
+  using layout_type = typename S::template layout_type<shape_type>;
 
   array()
       : data_{std::vector<value_type>((Dimensions * ...))},
@@ -143,14 +148,12 @@ template <class T, Layout L, int... Dimensions> struct array {
 private:
   data_type data_;
   shape_type shape_;
-  L layout_;
+  layout_type layout_;
 };
 
 template <class T, class Specification, int... Dimensions, class... Arguments>
 auto make_array(Arguments &&... arguments) {
-  using layout_type = typename Specification::template layout_type<
-      std::array<int, sizeof...(Dimensions)>>;
-  return array<T, layout_type, Dimensions...>{
+  return array<T, Specification, Dimensions...>{
       std::forward<Arguments>(arguments)...};
 }
 
@@ -160,13 +163,13 @@ struct default_specification {
 
 template <class T, int... Dimensions, class... Arguments>
 auto make_array(Arguments &&... arguments) {
-  return make_array<T, default_specification, Dimensions...>(
+  return array<T, default_specification, Dimensions...>(
       std::forward<Arguments>(arguments)...);
 }
 
-template <class T, Layout L, int... Dimensions>
-struct shape<array<T, L, Dimensions...>> {
-  using shape_type = typename array<T, L, Dimensions...>::shape_type;
+template <class T, Specification S, int... Dimensions>
+struct shape<array<T, S, Dimensions...>> {
+  using shape_type = typename array<T, S, Dimensions...>::shape_type;
   constexpr static shape_type value = shape_type{Dimensions...};
 };
 
@@ -199,3 +202,4 @@ template <Array A> auto operator-(const A &a, const A &a2) -> A {
 } // namespace v0
 
 } // namespace nd
+
