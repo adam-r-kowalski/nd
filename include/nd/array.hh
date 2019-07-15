@@ -18,19 +18,35 @@ template <class T>
 constexpr static typename T::shape_type shape_v = shape<T>::value;
 
 // clang-format off
-template <class A, class Shape = typename A::shape_type>
+template <class A,
+          class Shape = typename A::shape_type,
+          class Iterator = typename A::const_iterator>
 concept Array = requires(const A const_array, Shape shape) {
   { const_array.shape() } -> const Shape &;
   { shape_v<A> } -> Shape;
   { std::apply(const_array, shape) } -> typename A::const_reference;
+  { const_array.begin() } -> Iterator;
+  { const_array.end() } -> Iterator;
+  { const_array.rbegin() } -> Iterator;
+  { const_array.rend() } -> Iterator;
+  { const_array.cbegin() } -> Iterator;
+  { const_array.cend() } -> Iterator;
+  { const_array.crbegin() } -> Iterator;
+  { const_array.crend() } -> Iterator;
 };
 // clang-format on
 
 // clang-format off
-template <class A, class Shape = typename A::shape_type>
+template <class A,
+          class Shape = typename A::shape_type,
+          class Iterator = typename A::iterator>
 concept MutableArray = requires(A array, Shape shape) {
   requires Array<A>;
   { std::apply(array, shape) } -> typename A::reference;
+  { array.begin() } -> Iterator;
+  { array.end() } -> Iterator;
+  { array.rbegin() } -> Iterator;
+  { array.rend() } -> Iterator;
 };
 // clang-format on
 
@@ -88,9 +104,13 @@ template <class T, template <class> class L, int... Dimensions> struct array {
   using value_type = T;
   using reference = value_type &;
   using const_reference = const value_type &;
+  using data_type = std::vector<value_type>;
   using shape_type = std::array<int, sizeof...(Dimensions)>;
+  using layout_type = L<shape_type>;
+  using iterator = typename data_type::iterator;
+  using const_iterator = typename data_type::const_iterator;
 
-  static_assert(Layout<L<shape_type>>);
+  static_assert(Layout<layout_type>);
 
   array()
       : data_{std::vector<value_type>((Dimensions * ...))},
@@ -109,8 +129,21 @@ template <class T, template <class> class L, int... Dimensions> struct array {
     return data_[layout_.linear_index(std::array{indices...})];
   }
 
+  auto begin() -> iterator { return data_.begin(); }
+  auto begin() const -> const_iterator { return data_.begin(); }
+  auto end() -> iterator { return data_.end(); }
+  auto end() const -> const_iterator { return data_.end(); }
+  auto rbegin() -> iterator { return iterator{}; }
+  auto rbegin() const -> const_iterator { return data_.rbegin(); }
+  auto rend() -> iterator { return iterator{}; }
+  auto rend() const -> const_iterator { return data_.rend(); }
+  auto cbegin() const -> const_iterator { return data_.cbegin(); }
+  auto cend() const -> const_iterator { return data_.cend(); }
+  auto crbegin() const -> const_iterator { return data_.crbegin(); }
+  auto crend() const -> const_iterator { return data_.crend(); }
+
 private:
-  std::vector<value_type> data_;
+  data_type data_;
   shape_type shape_;
   L<shape_type> layout_;
 };

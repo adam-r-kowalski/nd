@@ -1,5 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+
 #include <doctest.h>
+#include <sstream>
 
 #include <nd/core.hh>
 
@@ -15,48 +17,48 @@ TEST_CASE("arrays match the MutableArray concept") {
 
 TEST_CASE("arrays have a compile and runtime shape") {
   using A = nd::array<int, nd::row_major, 3, 5>;
-  auto t = A{};
+  auto a = A{};
   static_assert(nd::shape_v<A> == std::array{3, 5});
-  REQUIRE(t.shape() == std::array{3, 5});
+  REQUIRE(a.shape() == std::array{3, 5});
 }
 
 TEST_CASE("arrays have a value type") {
   using A = nd::array<int, nd::row_major, 3, 5>;
-  auto t = A{};
-  static_assert(std::is_same_v<A::value_type, int>);
+  auto a = A{};
+  static_assert(nd::Same<A::value_type, int>);
 }
 
 TEST_CASE("arrays have a reference type") {
   using A = nd::array<int, nd::row_major, 3, 5>;
-  auto t = A{};
-  static_assert(std::is_same_v<A::reference, int &>);
+  auto a = A{};
+  static_assert(nd::Same<A::reference, int &>);
 }
 
 TEST_CASE("arrays have a const_reference type") {
   using A = nd::array<int, nd::row_major, 3, 5>;
-  auto t = A{};
-  static_assert(std::is_same_v<A::const_reference, const int &>);
+  auto a = A{};
+  static_assert(nd::Same<A::const_reference, const int &>);
 }
 
 TEST_CASE("arrays can be indexed") {
-  auto t = nd::array<int, nd::row_major, 3, 5>{};
-  t(1, 2) = 3;
-  t(2, 4) = 5;
-  REQUIRE(t(1, 2) == 3);
-  REQUIRE(t(2, 4) == 5);
+  auto a = nd::array<int, nd::row_major, 3, 5>{};
+  a(1, 2) = 3;
+  a(2, 4) = 5;
+  REQUIRE(a(1, 2) == 3);
+  REQUIRE(a(2, 4) == 5);
 }
 
 TEST_CASE("arrays default construct their elements") {
-  auto t = nd::array<int, nd::row_major, 3, 5>{};
-  REQUIRE(t(1, 2) == 0);
+  auto a = nd::array<int, nd::row_major, 3, 5>{};
+  REQUIRE(a(1, 2) == 0);
 }
 
 TEST_CASE("arrays can be constructed with column major layout") {
   using A = nd::array<int, nd::column_major, 3, 5>;
-  auto t = A{};
+  auto a = A{};
   static_assert(nd::Array<A>);
   static_assert(nd::MutableArray<A>);
-  REQUIRE(t.shape() == std::array{3, 5});
+  REQUIRE(a.shape() == std::array{3, 5});
 }
 
 TEST_CASE("row major matches Layout concept") {
@@ -133,4 +135,110 @@ TEST_CASE("column major maps cartesian to linear index") {
   REQUIRE(l.linear_index({1, 1, 3}) == 21);
   REQUIRE(l.linear_index({0, 2, 3}) == 22);
   REQUIRE(l.linear_index({1, 2, 3}) == 23);
+}
+
+TEST_CASE("row major arrays can iterated in row order") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+  auto ss = std::stringstream{};
+  std::copy(a.cbegin(), a.cend(), std::ostream_iterator<int>(ss, ""));
+  REQUIRE(ss.str() == "123456");
+}
+
+TEST_CASE("column major arrays can iterated in column order") {
+  auto a = nd::array<int, nd::column_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+  auto ss = std::stringstream{};
+  std::copy(a.cbegin(), a.cend(), std::ostream_iterator<int>(ss, ""));
+  REQUIRE(ss.str() == "142536");
+}
+
+TEST_CASE("arrays can be copy constructed") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+  auto a2 = a;
+
+  auto ss1 = std::stringstream{};
+  std::copy(a.cbegin(), a.cend(), std::ostream_iterator<int>(ss1, ""));
+  REQUIRE(ss1.str() == "123456");
+
+  auto ss2 = std::stringstream{};
+  std::copy(a2.cbegin(), a2.cend(), std::ostream_iterator<int>(ss2, ""));
+  REQUIRE(ss2.str() == "123456");
+}
+
+TEST_CASE("arrays can be move constructed") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+  auto a2 = std::move(a);
+
+  auto ss1 = std::stringstream{};
+  std::copy(a.cbegin(), a.cend(), std::ostream_iterator<int>(ss1, ""));
+  REQUIRE(ss1.str() == "");
+
+  auto ss2 = std::stringstream{};
+  std::copy(a2.cbegin(), a2.cend(), std::ostream_iterator<int>(ss2, ""));
+  REQUIRE(ss2.str() == "123456");
+}
+
+TEST_CASE("arrays can be copy assigned") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+
+  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  a2 = a;
+
+  auto ss1 = std::stringstream{};
+  std::copy(a.cbegin(), a.cend(), std::ostream_iterator<int>(ss1, ""));
+  REQUIRE(ss1.str() == "123456");
+
+  auto ss2 = std::stringstream{};
+  std::copy(a2.cbegin(), a2.cend(), std::ostream_iterator<int>(ss2, ""));
+  REQUIRE(ss2.str() == "123456");
+}
+
+TEST_CASE("arrays can be move assigned") {
+  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  a(0, 0) = 1;
+  a(0, 1) = 2;
+  a(0, 2) = 3;
+  a(1, 0) = 4;
+  a(1, 1) = 5;
+  a(1, 2) = 6;
+
+  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  a2 = std::move(a);
+
+  auto ss1 = std::stringstream{};
+  std::copy(a.cbegin(), a.cend(), std::ostream_iterator<int>(ss1, ""));
+  REQUIRE(ss1.str() == "");
+
+  auto ss2 = std::stringstream{};
+  std::copy(a2.cbegin(), a2.cend(), std::ostream_iterator<int>(ss2, ""));
+  REQUIRE(ss2.str() == "123456");
 }
