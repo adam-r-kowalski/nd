@@ -5,43 +5,49 @@
 
 #include <nd/core.hh>
 
-TEST_CASE("arrays match the Array concept") {
-  using A = nd::array<int, nd::row_major, 3, 5>;
-  static_assert(nd::Array<A>);
+TEST_CASE("arrays can be constructed with default specification") {
+  auto a = nd::make_array<int, 3, 5>();
+  using A = decltype(a);
+  static_assert(nd::Array<decltype(a)>);
+  static_assert(nd::MutableArray<decltype(a)>);
+  static_assert(nd::Same<A::layout_type, nd::row_major<A::shape_type>>);
 }
 
-TEST_CASE("arrays match the MutableArray concept") {
-  using A = nd::array<int, nd::row_major, 3, 5>;
+struct spec {
+  template <class Shape> using layout_type = nd::column_major<Shape>;
+};
+
+TEST_CASE("arrays can be constructed with custom specification") {
+  auto a = nd::make_array<int, spec, 3, 5>();
+  using A = decltype(a);
+  static_assert(nd::Array<A>);
   static_assert(nd::MutableArray<A>);
+  static_assert(nd::Same<A::layout_type, nd::column_major<A::shape_type>>);
 }
 
 TEST_CASE("arrays have a compile and runtime shape") {
-  using A = nd::array<int, nd::row_major, 3, 5>;
-  auto a = A{};
-  static_assert(nd::shape_v<A> == std::array{3, 5});
+  auto a = nd::make_array<int, 3, 5>();
+  static_assert(nd::shape_v<decltype(a)> == std::array{3, 5});
   REQUIRE(a.shape() == std::array{3, 5});
 }
 
 TEST_CASE("arrays have a value type") {
-  using A = nd::array<int, nd::row_major, 3, 5>;
-  auto a = A{};
-  static_assert(nd::Same<A::value_type, int>);
+  auto a = nd::make_array<int, 3, 5>();
+  static_assert(nd::Same<decltype(a)::value_type, int>);
 }
 
 TEST_CASE("arrays have a reference type") {
-  using A = nd::array<int, nd::row_major, 3, 5>;
-  auto a = A{};
-  static_assert(nd::Same<A::reference, int &>);
+  auto a = nd::make_array<int, 3, 5>();
+  static_assert(nd::Same<decltype(a)::reference, int &>);
 }
 
 TEST_CASE("arrays have a const_reference type") {
-  using A = nd::array<int, nd::row_major, 3, 5>;
-  auto a = A{};
-  static_assert(nd::Same<A::const_reference, const int &>);
+  auto a = nd::make_array<int, 3, 5>();
+  static_assert(nd::Same<decltype(a)::const_reference, const int &>);
 }
 
 TEST_CASE("arrays can be indexed") {
-  auto a = nd::array<int, nd::row_major, 3, 5>{};
+  auto a = nd::make_array<int, 3, 5>();
   a(1, 2) = 3;
   a(2, 4) = 5;
   REQUIRE(a(1, 2) == 3);
@@ -49,16 +55,8 @@ TEST_CASE("arrays can be indexed") {
 }
 
 TEST_CASE("arrays default construct their elements") {
-  auto a = nd::array<int, nd::row_major, 3, 5>{};
+  auto a = nd::make_array<int, 3, 5>();
   REQUIRE(a(1, 2) == 0);
-}
-
-TEST_CASE("arrays can be constructed with column major layout") {
-  using A = nd::array<int, nd::column_major, 3, 5>;
-  auto a = A{};
-  static_assert(nd::Array<A>);
-  static_assert(nd::MutableArray<A>);
-  REQUIRE(a.shape() == std::array{3, 5});
 }
 
 TEST_CASE("row major matches Layout concept") {
@@ -138,7 +136,7 @@ TEST_CASE("column major maps cartesian to linear index") {
 }
 
 TEST_CASE("row major arrays can iterated in row order") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -151,7 +149,7 @@ TEST_CASE("row major arrays can iterated in row order") {
 }
 
 TEST_CASE("column major arrays can iterated in column order") {
-  auto a = nd::array<int, nd::column_major, 2, 3>{};
+  auto a = nd::make_array<int, spec, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -164,7 +162,7 @@ TEST_CASE("column major arrays can iterated in column order") {
 }
 
 TEST_CASE("arrays can be copy constructed") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -183,7 +181,7 @@ TEST_CASE("arrays can be copy constructed") {
 }
 
 TEST_CASE("arrays can be move constructed") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -202,7 +200,7 @@ TEST_CASE("arrays can be move constructed") {
 }
 
 TEST_CASE("arrays can be copy assigned") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -210,7 +208,7 @@ TEST_CASE("arrays can be copy assigned") {
   a(1, 1) = 5;
   a(1, 2) = 6;
 
-  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  auto a2 = nd::make_array<int, 2, 3>();
   a2 = a;
 
   auto ss1 = std::stringstream{};
@@ -223,7 +221,7 @@ TEST_CASE("arrays can be copy assigned") {
 }
 
 TEST_CASE("arrays can be move assigned") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -231,7 +229,7 @@ TEST_CASE("arrays can be move assigned") {
   a(1, 1) = 5;
   a(1, 2) = 6;
 
-  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  auto a2 = nd::make_array<int, 2, 3>();
   a2 = std::move(a);
 
   auto ss1 = std::stringstream{};
@@ -244,7 +242,7 @@ TEST_CASE("arrays can be move assigned") {
 }
 
 TEST_CASE("arrays can be compared for equality") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -252,7 +250,7 @@ TEST_CASE("arrays can be compared for equality") {
   a(1, 1) = 5;
   a(1, 2) = 6;
 
-  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  auto a2 = nd::make_array<int, 2, 3>();
   a2(0, 0) = 1;
   a2(0, 1) = 2;
   a2(0, 2) = 3;
@@ -264,7 +262,7 @@ TEST_CASE("arrays can be compared for equality") {
 }
 
 TEST_CASE("arrays can be compared for inequality") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -272,7 +270,7 @@ TEST_CASE("arrays can be compared for inequality") {
   a(1, 1) = 5;
   a(1, 2) = 6;
 
-  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  auto a2 = nd::make_array<int, 2, 3>();
   a2(0, 0) = 3;
   a2(0, 1) = 3;
   a2(0, 2) = 3;
@@ -284,7 +282,7 @@ TEST_CASE("arrays can be compared for inequality") {
 }
 
 TEST_CASE("arrays can be negated") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -292,7 +290,7 @@ TEST_CASE("arrays can be negated") {
   a(1, 1) = 5;
   a(1, 2) = 6;
 
-  auto a2 = nd::array<int, nd::row_major, 2, 3>{};
+  auto a2 = nd::make_array<int, 2, 3>();
   a2(0, 0) = -1;
   a2(0, 1) = -2;
   a2(0, 2) = -3;
@@ -304,7 +302,7 @@ TEST_CASE("arrays can be negated") {
 }
 
 TEST_CASE("arrays can be added") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 1;
   a(0, 1) = 2;
   a(0, 2) = 3;
@@ -314,7 +312,7 @@ TEST_CASE("arrays can be added") {
 
   auto a2 = a;
 
-  auto a3 = nd::array<int, nd::row_major, 2, 3>{};
+  auto a3 = nd::make_array<int, 2, 3>();
   a3(0, 0) = 2;
   a3(0, 1) = 4;
   a3(0, 2) = 6;
@@ -326,7 +324,7 @@ TEST_CASE("arrays can be added") {
 }
 
 TEST_CASE("arrays can be subtracted") {
-  auto a = nd::array<int, nd::row_major, 2, 3>{};
+  auto a = nd::make_array<int, 2, 3>();
   a(0, 0) = 2;
   a(0, 1) = 4;
   a(0, 2) = 6;
@@ -334,7 +332,7 @@ TEST_CASE("arrays can be subtracted") {
   a(1, 1) = 10;
   a(1, 2) = 12;
 
-  auto a2 = nd::array<int, nd::row_major, 2, 3>{};;
+  auto a2 = nd::make_array<int, 2, 3>();;
   a2(0, 0) = 1;
   a2(0, 1) = 2;
   a2(0, 2) = 3;
@@ -342,7 +340,7 @@ TEST_CASE("arrays can be subtracted") {
   a2(1, 1) = 5;
   a2(1, 2) = 6;
 
-  auto a3 = nd::array<int, nd::row_major, 2, 3>{};
+  auto a3 = nd::make_array<int, 2, 3>();
   a3(0, 0) = 1;
   a3(0, 1) = 2;
   a3(0, 2) = 3;
@@ -352,3 +350,4 @@ TEST_CASE("arrays can be subtracted") {
 
   REQUIRE(a - a2 == a3);
 }
+

@@ -100,17 +100,15 @@ private:
   Shape stride_;
 };
 
-template <class T, template <class> class L, int... Dimensions> struct array {
+template <class T, Layout L, int... Dimensions> struct array {
   using value_type = T;
   using reference = value_type &;
   using const_reference = const value_type &;
   using data_type = std::vector<value_type>;
   using shape_type = std::array<int, sizeof...(Dimensions)>;
-  using layout_type = L<shape_type>;
   using iterator = typename data_type::iterator;
   using const_iterator = typename data_type::const_iterator;
-
-  static_assert(Layout<layout_type>);
+  using layout_type = L;
 
   array()
       : data_{std::vector<value_type>((Dimensions * ...))},
@@ -145,12 +143,27 @@ template <class T, template <class> class L, int... Dimensions> struct array {
 private:
   data_type data_;
   shape_type shape_;
-  L<shape_type> layout_;
+  L layout_;
 };
 
-template <class T, template <class> class Layout, int... Dimensions>
-struct shape<array<T, Layout, Dimensions...>> {
-  using shape_type = typename array<T, Layout, Dimensions...>::shape_type;
+template <class T, class Specification, int... Dimensions, class... Arguments>
+auto make_array(Arguments &&... arguments) {
+  using layout_type = typename Specification::template layout_type<
+      std::array<int, sizeof...(Dimensions)>>;
+  return array<T, layout_type, Dimensions...>{
+      std::forward<Arguments>(arguments)...};
+}
+
+template <class T, int... Dimensions, class... Arguments>
+auto make_array(Arguments &&... arguments) {
+  using layout_type = row_major<std::array<int, sizeof...(Dimensions)>>;
+  return array<T, layout_type, Dimensions...>{
+      std::forward<Arguments>(arguments)...};
+}
+
+template <class T, Layout L, int... Dimensions>
+struct shape<array<T, L, Dimensions...>> {
+  using shape_type = typename array<T, L, Dimensions...>::shape_type;
   constexpr static shape_type value = shape_type{Dimensions...};
 };
 
