@@ -12,18 +12,12 @@ namespace nd {
 
 inline namespace v0 {
 
-template <class T> struct shape;
-
-template <class T>
-constexpr static typename T::shape_type shape_v = shape<T>::value;
-
 // clang-format off
 template <class A,
           class Shape = typename A::shape_type,
           class Iterator = typename A::const_iterator>
 concept Array = requires(const A const_array, Shape shape) {
   { const_array.shape() } -> const Shape &;
-  { shape_v<A> } -> Shape;
   { std::apply(const_array, shape) } -> typename A::const_reference;
   { const_array.begin() } -> Iterator;
   { const_array.end() } -> Iterator;
@@ -122,12 +116,11 @@ concept Specification = Layout<typename S::template layout_type<Shape>>;
 // clang-format on
 
 struct default_specification {
-  template <class Size> using layout_type = row_major<Size>;
+  template <class Shape> using layout_type = row_major<Shape>;
 };
 
-template <template <class> class... Policies>
-struct p {
-  template <class Size> using layout_type = column_major<Size>;
+template <template <class> class... Policies> struct p {
+  template <class Shape> using layout_type = column_major<Shape>;
 };
 
 template <class T, Dimensions D, Specification S = default_specification>
@@ -174,10 +167,6 @@ private:
   storage_type storage_;
   shape_type shape_;
   layout_type layout_;
-};
-
-template <class T, Dimensions D, Specification S> struct shape<array<T, D, S>> {
-  constexpr static typename D::shape_type value = D::shape;
 };
 
 template <Array A> auto operator-(const A &a) -> A {

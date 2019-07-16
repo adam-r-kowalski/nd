@@ -23,9 +23,20 @@ TEST_CASE("arrays can be constructed with custom policies") {
   static_assert(nd::Same<A::layout_type, nd::column_major<A::shape_type>>);
 }
 
-TEST_CASE("arrays have a compile and runtime shape") {
+struct custom_specification {
+  template <class Shape> using layout_type = nd::column_major<Shape>;
+};
+
+TEST_CASE("arrays can be constructed with custom specification") {
+  auto a = nd::array<int, d<3, 5>, custom_specification>{};
+  using A = decltype(a);
+  static_assert(nd::Array<A>);
+  static_assert(nd::MutableArray<A>);
+  static_assert(nd::Same<A::layout_type, nd::column_major<A::shape_type>>);
+}
+
+TEST_CASE("arrays have a shape") {
   auto a = nd::array<int, d<3, 5>>{};
-  static_assert(nd::shape_v<decltype(a)> == std::array{3, 5});
   REQUIRE(a.shape() == std::array{3, 5});
 }
 
@@ -340,4 +351,3 @@ TEST_CASE("arrays can be subtracted") {
 
   REQUIRE(a - a2 == a2);
 }
-
