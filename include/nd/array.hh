@@ -101,76 +101,83 @@ private:
 };
 
 // clang-format off
+template <class D>
+concept Dimensions = requires() {
+  { D::shape } -> typename D::shape_type;
+  { D::size } -> int;
+  { D::rank } -> int;
+};
+// clang-format on
+
+template <int... Ds> struct d {
+  using shape_type = std::array<int, sizeof...(Ds)>;
+  constexpr static shape_type shape = shape_type{Ds...};
+  constexpr static int size = (Ds * ...);
+  constexpr static int rank = sizeof...(Ds);
+};
+
+// clang-format off
 template <class S, class Shape = std::array<int, 2>>
 concept Specification = Layout<typename S::template layout_type<Shape>>;
 // clang-format on
-
-template <class T, Specification S, int... Dimensions> struct array {
-  using value_type = T;
-  using reference = value_type &;
-  using const_reference = const value_type &;
-  using data_type = std::vector<value_type>;
-  using shape_type = std::array<int, sizeof...(Dimensions)>;
-  using iterator = typename data_type::iterator;
-  using const_iterator = typename data_type::const_iterator;
-  using layout_type = typename S::template layout_type<shape_type>;
-
-  array()
-      : data_{std::vector<value_type>((Dimensions * ...))},
-        shape_{Dimensions...}, layout_{shape_} {}
-
-  auto shape() const -> const shape_type & { return shape_; }
-
-  template <class... Indices>
-  auto operator()(Indices... indices) const -> const_reference {
-    static_assert(sizeof...(Indices) == sizeof...(Dimensions));
-    return data_[layout_.linear_index(std::array{indices...})];
-  }
-
-  template <class... Indices> auto operator()(Indices... indices) -> reference {
-    static_assert(sizeof...(Indices) == sizeof...(Dimensions));
-    return data_[layout_.linear_index(std::array{indices...})];
-  }
-
-  auto begin() -> iterator { return data_.begin(); }
-  auto begin() const -> const_iterator { return data_.begin(); }
-  auto end() -> iterator { return data_.end(); }
-  auto end() const -> const_iterator { return data_.end(); }
-  auto rbegin() -> iterator { return iterator{}; }
-  auto rbegin() const -> const_iterator { return data_.rbegin(); }
-  auto rend() -> iterator { return iterator{}; }
-  auto rend() const -> const_iterator { return data_.rend(); }
-  auto cbegin() const -> const_iterator { return data_.cbegin(); }
-  auto cend() const -> const_iterator { return data_.cend(); }
-  auto crbegin() const -> const_iterator { return data_.crbegin(); }
-  auto crend() const -> const_iterator { return data_.crend(); }
-
-private:
-  data_type data_;
-  shape_type shape_;
-  layout_type layout_;
-};
-
-template <class T, class Specification, int... Dimensions, class... Arguments>
-auto make_array(Arguments &&... arguments) {
-  return array<T, Specification, Dimensions...>{
-      std::forward<Arguments>(arguments)...};
-}
 
 struct default_specification {
   template <class Size> using layout_type = row_major<Size>;
 };
 
-template <class T, int... Dimensions, class... Arguments>
-auto make_array(Arguments &&... arguments) {
-  return array<T, default_specification, Dimensions...>(
-      std::forward<Arguments>(arguments)...);
-}
+template <template <class> class... Policies>
+struct p {
+  template <class Size> using layout_type = column_major<Size>;
+};
 
-template <class T, Specification S, int... Dimensions>
-struct shape<array<T, S, Dimensions...>> {
-  using shape_type = typename array<T, S, Dimensions...>::shape_type;
-  constexpr static shape_type value = shape_type{Dimensions...};
+template <class T, Dimensions D, Specification S = default_specification>
+struct array {
+  using value_type = T;
+  using reference = value_type &;
+  using const_reference = const value_type &;
+  using storage_type = std::vector<value_type>;
+  using shape_type = typename D::shape_type;
+  using iterator = typename storage_type::iterator;
+  using const_iterator = typename storage_type::const_iterator;
+  using layout_type = typename S::template layout_type<shape_type>;
+
+  array()
+      : storage_{storage_type(D::size)}, shape_{D::shape}, layout_{shape_} {}
+
+  auto shape() const -> const shape_type & { return shape_; }
+
+  template <class... Indices>
+  auto operator()(Indices... indices) const -> const_reference {
+    static_assert(sizeof...(Indices) == D::rank);
+    return storage_[layout_.linear_index(std::array{indices...})];
+  }
+
+  template <class... Indices> auto operator()(Indices... indices) -> reference {
+    static_assert(sizeof...(Indices) == D::rank);
+    return storage_[layout_.linear_index(std::array{indices...})];
+  }
+
+  auto begin() -> iterator { return storage_.begin(); }
+  auto begin() const -> const_iterator { return storage_.begin(); }
+  auto end() -> iterator { return storage_.end(); }
+  auto end() const -> const_iterator { return storage_.end(); }
+  auto rbegin() -> iterator { return iterator{}; }
+  auto rbegin() const -> const_iterator { return storage_.rbegin(); }
+  auto rend() -> iterator { return iterator{}; }
+  auto rend() const -> const_iterator { return storage_.rend(); }
+  auto cbegin() const -> const_iterator { return storage_.cbegin(); }
+  auto cend() const -> const_iterator { return storage_.cend(); }
+  auto crbegin() const -> const_iterator { return storage_.crbegin(); }
+  auto crend() const -> const_iterator { return storage_.crend(); }
+
+private:
+  storage_type storage_;
+  shape_type shape_;
+  layout_type layout_;
+};
+
+template <class T, Dimensions D, Specification S> struct shape<array<T, D, S>> {
+  constexpr static typename D::shape_type value = D::shape;
 };
 
 template <Array A> auto operator-(const A &a) -> A {
@@ -202,4 +209,3 @@ template <Array A> auto operator-(const A &a, const A &a2) -> A {
 } // namespace v0
 
 } // namespace nd
-
