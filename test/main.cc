@@ -5,14 +5,14 @@
 
 #include <nd/core.hh>
 
-using nd::d, nd::p;
+using nd::traits::Same, nd::d, nd::p;
 
 TEST_CASE("arrays can be constructed with statically known dimensions") {
   auto a = nd::array<int, d<3, 5>>{};
   using A = decltype(a);
   static_assert(nd::Array<A>);
   static_assert(nd::MutableArray<A>);
-  static_assert(nd::Same<A::layout_type, nd::row_major<A::shape_type>>);
+  static_assert(Same<A::layout_t, nd::row_major<nd::traits::shape_t<A>>>);
 }
 
 TEST_CASE("arrays can be constructed with custom policies") {
@@ -20,7 +20,7 @@ TEST_CASE("arrays can be constructed with custom policies") {
   using A = decltype(a);
   static_assert(nd::Array<A>);
   static_assert(nd::MutableArray<A>);
-  static_assert(nd::Same<A::layout_type, nd::column_major<A::shape_type>>);
+  static_assert(Same<A::layout_t, nd::column_major<nd::traits::shape_t<A>>>);
 }
 
 struct custom_specification {
@@ -32,7 +32,7 @@ TEST_CASE("arrays can be constructed with custom specification") {
   using A = decltype(a);
   static_assert(nd::Array<A>);
   static_assert(nd::MutableArray<A>);
-  static_assert(nd::Same<A::layout_type, nd::column_major<A::shape_type>>);
+  static_assert(Same<A::layout_t, nd::column_major<nd::traits::shape_t<A>>>);
 }
 
 TEST_CASE("arrays have a shape") {
@@ -41,18 +41,18 @@ TEST_CASE("arrays have a shape") {
 }
 
 TEST_CASE("arrays have a value type") {
-  auto a = nd::array<int, d<3, 5>>{};
-  static_assert(nd::Same<decltype(a)::value_type, int>);
+  using A = nd::array<int, d<3, 5>>;
+  static_assert(Same<nd::traits::value_t<A>, int>);
 }
 
 TEST_CASE("arrays have a reference type") {
-  auto a = nd::array<int, d<3, 5>>{};
-  static_assert(nd::Same<decltype(a)::reference, int &>);
+  using A = nd::array<int, d<3, 5>>;
+  static_assert(Same<nd::traits::reference_t<A>, int &>);
 }
 
 TEST_CASE("arrays have a const_reference type") {
-  auto a = nd::array<int, d<3, 5>>{};
-  static_assert(nd::Same<decltype(a)::const_reference, const int &>);
+  using A = nd::array<int, d<3, 5>>;
+  static_assert(Same<nd::traits::const_reference_t<A>, const int &>);
 }
 
 TEST_CASE("arrays can be indexed") {
