@@ -14,9 +14,9 @@ inline namespace v0 {
 
 // clang-format off
 template <class A,
-          class shape_t = traits::shape_t<A>,
-          class const_reference_t = traits::const_reference_t<A>,
-          class const_iterator_t = traits::const_iterator_t<A>>
+	  class shape_t = traits::shape_t<A>,
+	  class const_reference_t = traits::const_reference_t<A>,
+	  class const_iterator_t = traits::const_iterator_t<A>>
 concept Array = requires(const A const_array, shape_t cartesian_index) {
   { shape(const_array) } -> const shape_t &;
   { std::apply(const_array, cartesian_index) } -> const_reference_t;
@@ -33,9 +33,9 @@ concept Array = requires(const A const_array, shape_t cartesian_index) {
 
 // clang-format off
 template <class A,
-          class shape_t = traits::shape_t<A>,
-          class reference_t = traits::reference_t<A>,
-          class iterator_t = traits::iterator_t<A>>
+	  class shape_t = traits::shape_t<A>,
+	  class reference_t = traits::reference_t<A>,
+	  class iterator_t = traits::iterator_t<A>>
 concept MutableArray = requires(A array, shape_t cartesian_index) {
   requires Array<A>;
   { std::apply(array, cartesian_index) } -> reference_t;
@@ -48,8 +48,8 @@ concept MutableArray = requires(A array, shape_t cartesian_index) {
 
 // clang-format off
 template <class L,
-          class shape_t = traits::shape_t<L>,
-          class value_t = traits::value_t<shape_t>>
+	  class shape_t = traits::shape_t<L>,
+	  class value_t = traits::value_t<shape_t>>
 concept Layout = requires(L layout, shape_t array_size, shape_t cartesian_index) {
   { L{array_size} };
   { layout.linear_index(cartesian_index) } -> value_t;
@@ -63,12 +63,12 @@ template <class Shape> struct row_major {
   explicit row_major(const shape_t &shape) {
     stride_[shape.size() - 1] = 1;
     std::partial_sum(rbegin(shape), rend(shape) - 1, rbegin(stride_) + 1,
-                     std::multiplies{});
+		     std::multiplies{});
   }
 
   auto linear_index(const shape_t &cartesian_index) const -> value_t {
     return std::transform_reduce(begin(stride_), end(stride_),
-                                 begin(cartesian_index), 0);
+				 begin(cartesian_index), 0);
   }
 
   auto stride() const -> const shape_t & { return stride_; }
@@ -84,12 +84,12 @@ template <class Shape> struct column_major {
   explicit column_major(const shape_t &shape) {
     stride_[0] = 1;
     std::partial_sum(begin(shape), end(shape) - 1, begin(stride_) + 1,
-                     std::multiplies{});
+		     std::multiplies{});
   }
 
   auto linear_index(const shape_t &cartesian_index) const -> value_t {
     return std::transform_reduce(begin(stride_), end(stride_),
-                                 begin(cartesian_index), 0);
+				 begin(cartesian_index), 0);
   }
 
   auto stride() const -> const shape_t & { return stride_; }
@@ -127,9 +127,7 @@ template <template <class> class... Policies> struct p {
   template <class shape_t> using layout_type = column_major<shape_t>;
 };
 
-template <class T,
-          Dimensions D,
-          Specification S = default_specification>
+template <class T, Dimensions D, Specification S = default_specification>
 struct array {
   using value_t = T;
   using reference_t = value_t &;
@@ -140,8 +138,7 @@ struct array {
   using const_iterator_t = typename storage_t::const_iterator;
   using layout_t = typename S::template layout_type<shape_t>;
 
-  array()
-      : storage_{storage_t(D::size)}, shape_{D::shape}, layout_{shape_} {}
+  array() : storage_{storage_t(D::size)}, shape_{D::shape}, layout_{shape_} {}
 
   auto shape() const -> const shape_t & { return shape_; }
 
@@ -151,7 +148,8 @@ struct array {
     return storage_[layout_.linear_index(std::array{indices...})];
   }
 
-  template <class... Indices> auto operator()(Indices... indices) -> reference_t {
+  template <class... Indices>
+  auto operator()(Indices... indices) -> reference_t {
     static_assert(sizeof...(Indices) == D::rank);
     return storage_[layout_.linear_index(std::array{indices...})];
   }
