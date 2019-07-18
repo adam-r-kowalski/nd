@@ -17,5 +17,6 @@ target_compile_options(${CMAKE_PROJECT_NAME}
   -std=c++2a
   -Xclang
   -fconcepts-ts
-  -Wall)
-
+  -Wall
+  -Wextra
+  -Wpedantic)
