@@ -40,16 +40,16 @@ template <class T, int... Ns> struct tensor {
   auto empty() const -> bool { return begin() == end(); }
 
   template <class... Indices>
-  auto operator()(Indices... indices) const -> const T & {
+  auto operator()(Indices... indices) const -> const_reference {
     return storage_[linear_index(std::forward<Indices>(indices)...)];
   }
 
-  template <class... Indices> auto operator()(Indices... indices) -> T & {
+  template <class... Indices> auto operator()(Indices... indices) -> reference {
     return storage_[linear_index(std::forward<Indices>(indices)...)];
   }
 
 private:
-  template <class... Indices> auto linear_index(Indices... indices) -> int {
+  template <class... Indices> auto linear_index(Indices... indices) const -> int {
     static_assert(sizeof...(indices) == rank);
     auto cartesian_index = std::array{indices...};
     return std::transform_reduce(stride_.begin(), stride_.end(),

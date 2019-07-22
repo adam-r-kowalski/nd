@@ -4,9 +4,9 @@
 
 #include <nd/core.hh>
 
-TEST_CASE("tensors match the Container concept") {
+TEST_CASE("tensors match the Tensor concept") {
   using T = nd::tensor<int, 1, 2, 3>;
-  static_assert(nd::Container<T>);
+  static_assert(nd::Tensor<T>);
 }
 
 TEST_CASE("tensors can be indexed") {
@@ -99,4 +99,19 @@ TEST_CASE("tensors can be swapped") {
   REQUIRE(a(0, 1, 0) == 0);
   REQUIRE(a(0, 1, 1) == 0);
   REQUIRE(a(0, 1, 2) == 0);
+}
+
+TEST_CASE("tensors can be iterated") {
+  auto a = nd::tensor<int, 1, 2, 3>{};
+
+  a(0, 0, 0) = 1;
+  a(0, 0, 1) = 2;
+  a(0, 0, 2) = 3;
+  a(0, 1, 0) = 4;
+  a(0, 1, 1) = 5;
+  a(0, 1, 2) = 6;
+
+  auto b = std::array{1, 2, 3, 4, 5, 6};
+
+  REQUIRE(std::equal(a.begin(), a.end(), b.begin()));
 }
