@@ -28,12 +28,55 @@ concept Constructible =
 
 // clang-format off
 template <class T>
-concept Copyable = true;
-/*
+concept MoveConstructible = Constructible<T, T> && ConvertibleTo<T, T>;
+// clang-format on
+
+// clang-format off
+template <class T>
+concept CopyConstructible =
+  MoveConstructible<T> &&
+  Constructible<T, T&> &&
+  ConvertibleTo<T, T> &&
+  Constructible<T, const T&> &&
+  ConvertibleTo<const T&, T> &&
+  Constructible<T, const T> &&
+  ConvertibleTo<const T, T>;
+// clang-format on
+
+template <class T> concept Object = std::is_object_v<T>;
+
+// clang-format off
+template <class LHS, class RHS>
+concept Assignable =
+  LvalueReference<LHS> &&
+  requires(LHS lhs, RHS&& rhs) {
+    { lhs = std::forward<RHS>(rhs) } -> Same<LHS>;
+  };
+// clang-format on
+
+// clang-format off
+template <class T>
+concept Swappable =
+  requires(T& a, T& b) {
+    std::swap(a, b);
+  };
+// clang-format on
+
+// clang-format off
+template <class T>
+concept Movable =
+  Object<T> &&
+  MoveConstructible<T> &&
+  Assignable<T&, T> &&
+  Swappable<T>;
+// clang-format on
+
+// clang-format off
+template <class T>
+concept Copyable =
   CopyConstructible<T> &&
   Movable<T> &&
   Assignable<T&, const T&>;
-*/
 // clang-format on
 
 // clang-format off
