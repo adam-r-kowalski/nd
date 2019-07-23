@@ -4,164 +4,64 @@
 #include <iterator>
 #include <type_traits>
 
+#include <std/concepts.hh>
+
 namespace nd {
 
 inline namespace v0 {
-
-// clang-format off
-template <class T, class U>
-concept Same = std::is_same_v<T, U> && std::is_same_v<U, T>;
-// clang-format on
-
-template <class From, class To>
-concept ConvertibleTo = std::is_convertible_v<From, To>;
-
-template <class T> concept LvalueReference = std::is_lvalue_reference_v<T>;
-
-template <class T> concept Destructible = std::is_nothrow_destructible_v<T>;
-
-// clang-format off
-template <class T, class... Args>
-concept Constructible = 
-  Destructible<T> && std::is_constructible_v<T, Args...>;
-// clang-format on
-
-// clang-format off
-template <class T>
-concept MoveConstructible = Constructible<T, T> && ConvertibleTo<T, T>;
-// clang-format on
-
-// clang-format off
-template <class T>
-concept CopyConstructible =
-  MoveConstructible<T> &&
-  Constructible<T, T&> &&
-  ConvertibleTo<T, T> &&
-  Constructible<T, const T&> &&
-  ConvertibleTo<const T&, T> &&
-  Constructible<T, const T> &&
-  ConvertibleTo<const T, T>;
-// clang-format on
-
-template <class T> concept Object = std::is_object_v<T>;
-
-// clang-format off
-template <class LHS, class RHS>
-concept Assignable =
-  LvalueReference<LHS> &&
-  requires(LHS lhs, RHS&& rhs) {
-    { lhs = std::forward<RHS>(rhs) } -> Same<LHS>;
-  };
-// clang-format on
-
-// clang-format off
-template <class T>
-concept Swappable =
-  requires(T& a, T& b) {
-    std::swap(a, b);
-  };
-// clang-format on
-
-// clang-format off
-template <class T>
-concept Movable =
-  Object<T> &&
-  MoveConstructible<T> &&
-  Assignable<T&, T> &&
-  Swappable<T>;
-// clang-format on
-
-// clang-format off
-template <class T>
-concept Copyable =
-  CopyConstructible<T> &&
-  Movable<T> &&
-  Assignable<T&, const T&>;
-// clang-format on
-
-// clang-format off
-template <class I>
-concept Iterator =
-  Copyable<I> && requires(I i) {
-    { *i };
-    { ++i } -> Same<I&>;
-    { *i++ };
-  };
-// clang-format on
-
-// clang-format off
-template <class T>
-concept Integral = std::is_integral_v<T>;
-// clang-format on
-
-// clang-format off
-template <class T>
-concept SignedIntegral = Integral<T> && std::is_signed_v<T>;
-// clang-format on
-
-// clang-format off
-template <class I>
-concept InputIterator =
-  Iterator<I> &&
-  SignedIntegral<typename std::iterator_traits<I>::difference_type> &&
-  requires(I i, I j) {
-    { i != j } -> ConvertibleTo<bool>;
-    { *i } -> Same<typename std::iterator_traits<I>::reference>;
-    { ++i } -> ConvertibleTo<I&>;
-    { *i++ } -> ConvertibleTo<typename std::iterator_traits<I>::value_type>;
-  };
-// clang-format on
-
-// clang-format off
-template <class I,
-          class reference = typename std::iterator_traits<I>::reference>
-concept ForwardIterator =
-  InputIterator<I> &&
-  Constructible<I> &&
-  LvalueReference<reference> &&
-  Same<std::remove_cvref_t<reference>, typename std::iterator_traits<I>::value_type> &&
-  requires(I i) {
-    { i++ } -> ConvertibleTo<const I&>;
-    { *i++ } -> Same<reference>;
-  };
-// clang-format on
 
 // clang-format off
 template <class C,
           class iterator = typename C::iterator,
           class const_iterator = typename C::const_iterator,
           class size_type = typename C::size_type>
-concept Container =
-  ForwardIterator<iterator> &&
-  ForwardIterator<const_iterator> &&
+concept container =
+  std::forward_iterator<iterator> &&
+  std::forward_iterator<const_iterator> &&
   requires(C a, const C ca, C b) {
-    { C() } -> Same<C>;
-    { C(a) } -> Same<C>;
-    { a = b } -> Same<C&>;
-    { a.~C() } -> Same<void>;
-    { a.begin() } -> Same<iterator>;
-    { ca.begin() } -> Same<const_iterator>;
-    { a.end() } -> Same<iterator>;
-    { ca.end() } -> Same<const_iterator>;
-    { a.cbegin() } -> Same<const_iterator>;
-    { a.cend() } -> Same<const_iterator>;
-    { a == b } -> ConvertibleTo<bool>;
-    { a != b } -> ConvertibleTo<bool>;
-    { a.swap(b) } -> Same<void>;
-    { swap(a, b) } -> Same<void>;
-    { a.size() } -> Same<size_type>;
-    { a.max_size() } -> Same<size_type>;
-    { a.empty() } -> ConvertibleTo<bool>;
+    { C() } -> std::same_as<C>;
+    { C(a) } -> std::same_as<C>;
+    { a = b } -> std::same_as<C&>;
+    { a.~C() } -> std::same_as<void>;
+    { a.begin() } -> std::same_as<iterator>;
+    { ca.begin() } -> std::same_as<const_iterator>;
+    { a.end() } -> std::same_as<iterator>;
+    { ca.end() } -> std::same_as<const_iterator>;
+    { a.cbegin() } -> std::same_as<const_iterator>;
+    { a.cend() } -> std::same_as<const_iterator>;
+    { a == b } -> std::convertible_to<bool>;
+    { a != b } -> std::convertible_to<bool>;
+    { a.swap(b) };
+    { swap(a, b) };
+    { a.size() } -> std::same_as<size_type>;
+    { a.max_size() } -> std::same_as<size_type>;
+    { a.empty() } -> std::convertible_to<bool>;
   };
 // clang-format on
 
 // clang-format off
-template <class T, class Shape = std::array<int, T::rank>>
-concept Tensor =
-  Container<T> &&
-  requires(T t, const T ct, Shape cartesian_index) {
-    { std::apply(t, cartesian_index) } -> Same<typename T::reference>;
-    { std::apply(ct, cartesian_index) } -> Same<typename T::const_reference>;
+template <class C,
+          class reverse_iterator = typename C::reverse_iterator,
+          class const_reverse_iterator = typename C::const_reverse_iterator>
+concept reversible_container =
+  container<C> &&
+  requires(C a, const C ca) {
+    { a.rbegin() } -> std::same_as<reverse_iterator>; 
+    { ca.rbegin() } -> std::same_as<const_reverse_iterator>; 
+    { a.rend() } -> std::same_as<reverse_iterator>; 
+    { ca.rend() } -> std::same_as<const_reverse_iterator>; 
+    { a.crbegin() } -> std::same_as<const_reverse_iterator>; 
+    { a.crend() } -> std::same_as<const_reverse_iterator>; 
+  };
+// clang-format on
+
+// clang-format off
+template <class T>
+concept tensor =
+  reversible_container<T> &&
+  requires(T t, const T ct, std::array<int, T::rank> cartesian_index) {
+    { std::apply(t, cartesian_index) } -> std::same_as<typename T::reference>;
+    { std::apply(ct, cartesian_index) } -> std::same_as<typename T::const_reference>;
   };
 // clang-format on
 

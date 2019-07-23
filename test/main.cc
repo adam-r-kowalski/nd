@@ -5,12 +5,12 @@
 #include <nd/core.hh>
 
 TEST_CASE("tensors match the Tensor concept") {
-  using T = nd::tensor<int, 1, 2, 3>;
-  static_assert(nd::Tensor<T>);
+  using T = nd::basic_tensor<int, 1, 2, 3>;
+  static_assert(nd::tensor<T>);
 }
 
 TEST_CASE("tensors can be indexed") {
-  auto t = nd::tensor<int, 1, 2, 3>{};
+  auto t = nd::basic_tensor<int, 1, 2, 3>{};
   REQUIRE(t(0, 0, 0) == 0);
   REQUIRE(t(0, 0, 1) == 0);
   REQUIRE(t(0, 0, 2) == 0);
@@ -34,23 +34,23 @@ TEST_CASE("tensors can be indexed") {
 }
 
 TEST_CASE("tensors have a size") {
-  auto t = nd::tensor<int, 1, 2, 3>{};
+  auto t = nd::basic_tensor<int, 1, 2, 3>{};
   REQUIRE(t.size() == 6);
 }
 
 TEST_CASE("tensors have a max size") {
-  auto t = nd::tensor<int, 1, 2, 3>{};
+  auto t = nd::basic_tensor<int, 1, 2, 3>{};
   REQUIRE(t.max_size() == 6);
 }
 
 TEST_CASE("tensors are not empty") {
-  auto t = nd::tensor<int, 1, 2, 3>{};
+  auto t = nd::basic_tensor<int, 1, 2, 3>{};
   REQUIRE(!t.empty());
 }
 
 TEST_CASE("tensors can be compared for equality") {
-  auto a = nd::tensor<int, 1, 2, 3>{};
-  auto b = nd::tensor<int, 1, 2, 3>{};
+  auto a = nd::basic_tensor<int, 1, 2, 3>{};
+  auto b = nd::basic_tensor<int, 1, 2, 3>{};
 
   REQUIRE(a == b);
 
@@ -74,8 +74,8 @@ TEST_CASE("tensors can be compared for equality") {
 }
 
 TEST_CASE("tensors can be swapped") {
-  auto a = nd::tensor<int, 1, 2, 3>{};
-  auto b = nd::tensor<int, 1, 2, 3>{};
+  auto a = nd::basic_tensor<int, 1, 2, 3>{};
+  auto b = nd::basic_tensor<int, 1, 2, 3>{};
 
   a(0, 0, 0) = 1;
   a(0, 0, 1) = 2;
@@ -102,7 +102,7 @@ TEST_CASE("tensors can be swapped") {
 }
 
 TEST_CASE("tensors can be iterated") {
-  auto a = nd::tensor<int, 1, 2, 3>{};
+  auto a = nd::basic_tensor<int, 1, 2, 3>{};
 
   a(0, 0, 0) = 1;
   a(0, 0, 1) = 2;

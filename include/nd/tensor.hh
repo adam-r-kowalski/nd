@@ -10,21 +10,23 @@ namespace nd {
 
 inline namespace v0 {
 
-template <class T, int... Ns> struct tensor {
+template <class T, int... Ns> struct basic_tensor {
   using storage_type = std::vector<T>;
   using value_type = typename storage_type::value_type;
   using reference = typename storage_type::reference;
   using const_reference = typename storage_type::const_reference;
   using iterator = typename storage_type::iterator;
   using const_iterator = typename storage_type::const_iterator;
+  using reverse_iterator = typename storage_type::reverse_iterator;
+  using const_reverse_iterator = typename storage_type::const_reverse_iterator;
   using difference_type = typename storage_type::difference_type;
   using size_type = typename storage_type::size_type;
   constexpr static int rank = sizeof...(Ns);
   using shape_type = std::array<int, rank>;
 
-  tensor() : size_((Ns * ...)), storage_{storage_type(size_)}, shape_{Ns...} {
+  basic_tensor() : size_((Ns * ...)), storage_{storage_type(size_)}, shape_{Ns...} {
     stride_[shape_.size() - 1] = 1;
-    std::partial_sum(rbegin(shape_), rend(shape_) - 1, rbegin(stride_) + 1,
+    std::partial_sum(shape_.crbegin(), shape_.crend() - 1, stride_.rbegin() + 1,
                      std::multiplies{});
   }
 
@@ -34,7 +36,13 @@ template <class T, int... Ns> struct tensor {
   auto end() const -> const_iterator { return storage_.end(); }
   auto cbegin() const -> const_iterator { return storage_.cbegin(); }
   auto cend() const -> const_iterator { return storage_.cend(); }
-  auto swap(tensor &other) -> void { storage_.swap(other.storage_); }
+  auto rbegin() -> reverse_iterator { return storage_.rbegin(); }
+  auto rbegin() const -> const_reverse_iterator { return storage_.rbegin(); }
+  auto rend() -> reverse_iterator { return storage_.rend(); }
+  auto rend() const -> const_reverse_iterator { return storage_.rend(); }
+  auto crbegin() const -> const_reverse_iterator { return storage_.crbegin(); }
+  auto crend() const -> const_reverse_iterator { return storage_.crend(); }
+  auto swap(basic_tensor &other) -> void { storage_.swap(other.storage_); }
   auto size() const -> size_type { return size_; }
   auto max_size() const -> size_type { return size_; }
   auto empty() const -> bool { return begin() == end(); }
@@ -49,7 +57,8 @@ template <class T, int... Ns> struct tensor {
   }
 
 private:
-  template <class... Indices> auto linear_index(Indices... indices) const -> int {
+  template <class... Indices>
+  auto linear_index(Indices... indices) const -> int {
     static_assert(sizeof...(indices) == rank);
     auto cartesian_index = std::array{indices...};
     return std::transform_reduce(stride_.begin(), stride_.end(),
@@ -63,17 +72,17 @@ private:
 };
 
 template <class T, int... Ns>
-auto operator==(const tensor<T, Ns...> &a, const tensor<T, Ns...> &b) {
+auto operator==(const basic_tensor<T, Ns...> &a, const basic_tensor<T, Ns...> &b) {
   return std::equal(a.cbegin(), a.cend(), b.cbegin());
 }
 
 template <class T, int... Ns>
-auto operator!=(const tensor<T, Ns...> &a, const tensor<T, Ns...> &b) {
+auto operator!=(const basic_tensor<T, Ns...> &a, const basic_tensor<T, Ns...> &b) {
   return !(a == b);
 }
 
 template <class T, int... Ns>
-auto swap(tensor<T, Ns...> &a, tensor<T, Ns...> &b) -> void {
+auto swap(basic_tensor<T, Ns...> &a, basic_tensor<T, Ns...> &b) -> void {
   a.swap(b);
 }
 
